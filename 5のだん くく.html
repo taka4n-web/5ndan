@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>5のだん くく</title>
+<style>
+:root{--bg:#eef7ff;--card:#fff;--ink:#1f2f3f;--sub:#6b7f94;--main:#2f8ae0;--ok:#2e9e5b;--ng:#e04a4a;--line:#d3e5f6;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141c25;--card:#1f2a36;--ink:#e8f1fa;--sub:#93a8bd;--main:#5aa7f2;--ok:#4cc27f;--ng:#ff6b6b;--line:#2f3e4e}}
+:root[data-theme="dark"]{--bg:#141c25;--card:#1f2a36;--ink:#e8f1fa;--sub:#93a8bd;--main:#5aa7f2;--ok:#4cc27f;--ng:#ff6b6b;--line:#2f3e4e}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Maru Gothic ProN","Yu Gothic",sans-serif}
+main{max-width:520px;margin:0 auto;padding:16px}
+h1{text-align:center;margin:8px 0 12px;font-size:26px}
+.seg{display:flex;gap:8px;margin-bottom:12px}
+.seg button{flex:1;padding:12px 4px;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;font-size:16px;font-weight:700;cursor:pointer}
+.seg button.on{background:var(--main);border-color:var(--main);color:#fff}
+.lbl{font-size:13px;color:var(--sub);font-weight:700;margin:4px 2px}
+.row{display:flex;align-items:center;gap:10px;width:100%;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:8px;color:var(--ink);cursor:pointer;text-align:left;font:inherit}
+.row .eq{font-size:22px;font-weight:800;min-width:120px}
+.row .rd{color:var(--sub);font-size:14px;flex:1}
+.row.pl{border-color:var(--main)}
+.card{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:20px;text-align:center}
+.q{font-size:48px;font-weight:800;margin:12px 0}
+.prog{color:var(--sub);font-weight:700}
+.ch{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.ch button{padding:18px;font-size:28px;font-weight:800;border-radius:14px;border:2px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.ch button.ok{background:var(--ok);color:#fff;border-color:var(--ok)}
+.ch button.ng{background:var(--ng);color:#fff;border-color:var(--ng)}
+.msg{min-height:30px;font-size:20px;font-weight:800;margin-top:12px}
+.big{padding:14px 28px;background:var(--main);color:#fff;border:0;border-radius:14px;font-size:18px;font-weight:800;cursor:pointer;margin-top:12px}
+.stars{font-size:36px;margin:8px 0}
+.note{color:var(--sub);font-size:13px;text-align:center;margin-top:10px}
+.fc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;width:100%;min-height:280px;background:var(--card);border:3px solid var(--main);border-radius:24px;color:var(--ink);cursor:pointer;font:inherit;padding:20px}
+.fc .q{font-size:56px;margin:0}
+.fc .rd2{color:var(--sub);font-size:18px;min-height:26px}
+.fc:active{transform:scale(.98)}
+</style></head><body><main>
+<h1>🖐️ 5のだん くく</h1>
+<div class="lbl">くく の ならびかた</div>
+<div class="seg" id="modes"></div>
+<div class="seg" id="tabs"></div>
+<div id="v"></div>
+</main>
+<script>
+const READ=["ごいちがご","ごにじゅう","ごさんじゅうご","ごしにじゅう","ごごにじゅうご","ごろくさんじゅう","ごしちさんじゅうご","ごはしじゅう","ごっくしじゅうご"];
+const MODES=[["up","のぼり九九","1→9"],["down","くだり九九","9→1"],["rand","バラ九九","ランダム"]];
+const $=id=>document.getElementById(id);
+let mode="up",tab="learn",best={};
+try{best=JSON.parse(localStorage.getItem("go_best")||"{}")}catch(e){}
+function say(t){try{const u=new SpeechSynthesisUtterance(t);u.lang="ja-JP";u.rate=.85;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+function order(){
+  const a=[1,2,3,4,5,6,7,8,9];
+  if(mode==="down")a.reverse();
+  if(mode==="rand")a.sort(()=>Math.random()-.5);
+  return a;
+}
+function head(){
+  $("modes").innerHTML=MODES.map(([k,l,s])=>`<button class="${mode===k?"on":""}" onclick="setMode('${k}')">${l}<br><small>${s}</small></button>`).join("");
+  $("tabs").innerHTML=[["learn","おぼえる"],["flash","フラッシュ"],["prac","れんしゅう"]].map(([k,l])=>`<button class="${tab===k?"on":""}" onclick="setTab('${k}')">${l}</button>`).join("");
+}
+function setMode(m){mode=m;head();render()}
+function setTab(t){tab=t;head();render()}
+function render(){tab==="learn"?learn():tab==="flash"?flash():quiz()}
+function learn(){
+  L=order();
+  $("v").innerHTML=L.map(n=>`<button class="row" id="r${n}" onclick="play(${n})"><span class="eq">5 × ${n} = ${5*n}</span><span class="rd">${READ[n-1]}</span><span>🔊</span></button>`).join("")
+  +`<button class="big" style="width:100%" onclick="playAll()">🔊 ぜんぶ きく</button>
+  <p class="note">${mode==="rand"?"もういちど バラ九九 を えらぶと ならびが かわるよ":"タップすると こえが でるよ"}</p>`;
+}
+let L;
+function play(n){document.querySelectorAll(".row").forEach(r=>r.classList.remove("pl"));$("r"+n).classList.add("pl");say(READ[n-1])}
+function playAll(){try{speechSynthesis.cancel();L.forEach(n=>{const u=new SpeechSynthesisUtterance(READ[n-1]);u.lang="ja-JP";u.rate=.85;speechSynthesis.speak(u)})}catch(e){}}
+let S;
+function quiz(){S={list:order(),i:0,score:0,lock:false};ask()}
+function ask(){
+  const n=S.list[S.i],ans=5*n;
+  const pool=[5,10,15,20,25,30,35,40,45].filter(x=>x!==ans).sort(()=>Math.random()-.5).slice(0,3);
+  const o=pool.concat(ans).sort(()=>Math.random()-.5);
+  S.lock=false;
+  const m=MODES.find(x=>x[0]===mode)[1];
+  $("v").innerHTML=`<div class="card"><div class="prog">${S.i+1} / 9　${m}</div>
+  <div class="q">5 × ${n} = ?</div>
+  <div class="ch">${o.map(x=>`<button onclick="pick(this,${x},${ans},${n})">${x}</button>`).join("")}</div>
+  <div class="msg" id="msg"></div></div>`;
+}
+function pick(b,x,ans,n){
+  if(S.lock)return;
+  if(x===ans){S.lock=true;b.classList.add("ok");if(!S.miss)S.score++;S.miss=false;$("msg").textContent="⭕ せいかい！";say(READ[n-1]);setTimeout(next,1300)}
+  else{b.classList.add("ng");b.disabled=true;S.miss=true;$("msg").textContent="❌ もういちど！"}
+}
+function next(){
+  S.i++;
+  if(S.i<9)return ask();
+  const sc=S.score,st=sc===9?3:sc>=6?2:sc>=3?1:0;
+  let nb="";
+  if(sc>(best[mode]||0)){best[mode]=sc;nb="🎉 しんきろく！";try{localStorage.setItem("go_best",JSON.stringify(best))}catch(e){}}
+  $("v").innerHTML=`<div class="card"><div class="prog">けっか（いっぱつ せいかい）</div><div class="stars">${"⭐".repeat(st)}${"☆".repeat(3-st)}</div>
+  <div class="q">${sc} / 9</div><div class="msg">${nb||(sc===9?"かんぺき！":"もういっかい やってみよう")}</div>
+  <button class="big" onclick="quiz()">もういちど</button>
+  <p class="note">ベスト：${best[mode]||0} / 9</p></div>`;
+  if(sc===9)say("ぜんぶ せいかい！すごい！");
+}
+let F;
+function flash(){F={list:order(),i:0,shown:false,done:false,full:F?F.full:false};fdraw(false)}
+function fset(f){F.full=f;F.shown=false;fdraw(false)}
+function fdraw(sp){
+  const n=F.list[F.i],show=F.full||F.shown,m=MODES.find(x=>x[0]===mode)[1];
+  const sw=`<div class="seg"><button class="${F.full?"on":""}" onclick="fset(true)">こたえも みる</button><button class="${F.full?"":"on"}" onclick="fset(false)">じぶんで となえる</button></div>`;
+  $("v").innerHTML=sw+`<button class="fc" onclick="fnext()"><span class="prog">${F.i+1} / 9　${m}</span><span class="q">5 × ${n} = ${show?5*n:"?"}</span><span class="rd2">${show?READ[n-1]:"こたえを となえたら タップ"}</span></button><p class="note">${F.full?"タップで つぎの くく":"タップで こたえ → もういちど タップで つぎ"}</p>`;
+  if(sp&&show)say(READ[n-1]);
+}
+function fnext(){
+  if(F.done){flash();return}
+  if(!F.full&&!F.shown){F.shown=true;fdraw(true);return}
+  F.i++;F.shown=false;
+  if(F.i>=9){F.done=true;$("v").innerHTML=`<button class="fc" onclick="fnext()"><span class="stars">🎉</span><span class="q">おわり！</span><span class="rd2">タップで もういちど</span></button>`;say("よくできました");return}
+  fdraw(F.full);
+}
+head();learn();
+</script></body></html>
